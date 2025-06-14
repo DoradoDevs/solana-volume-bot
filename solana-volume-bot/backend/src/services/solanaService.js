@@ -4,8 +4,6 @@ const { env } = require('../config/env');
 console.log('Imported env in solanaService:', env);
 const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
 
-const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
-
 const generateWallets = (count) => {
   const wallets = [];
   for (let i = 0; i < count; i++) {
