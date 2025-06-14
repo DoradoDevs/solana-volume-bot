@@ -1,12 +1,8 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
-
-// Force reload of env module to avoid caching issues
-delete require.cache[require.resolve('../config/env')];
-const { env } = require('../config/env');
-console.log('Imported env in solanaService:', env);
-
-const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
+const QUICKNODE_RPC = process.env.QUICKNODE_RPC;
+console.log('Using QUICKNODE_RPC from process.env:', QUICKNODE_RPC);
+const connection = new Connection(QUICKNODE_RPC, 'confirmed');
 
 const generateWallets = (count) => {
   const wallets = [];
@@ -34,7 +30,7 @@ const depositSol = async (fromWalletSecret, toWalletPublicKey, amount) => {
     }),
     SystemProgram.transfer({
       fromPubkey: fromKeypair.publicKey,
-      toPubkey: new PublicKey(env.TAX_WALLET),
+      toPubkey: new PublicKey(process.env.TAX_WALLET),
       lamports: taxAmount * LAMPORTS_PER_SOL,
     })
   );
