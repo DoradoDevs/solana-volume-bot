@@ -14,7 +14,7 @@ const strategies = {
         console.log(`Buy quote for wallet ${wallet.publicKey}:`, quoteBuy);
         await jupiterService.swap(quoteBuy, wallet.secretKey);
         await new Promise((resolve) => setTimeout(resolve, 5000)); // 5-second delay
-        const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint);
+        const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint, wallet.secretKey);
         console.log(`Token account for wallet ${wallet.publicKey}:`, tokenAccount.toString());
         const quoteSell = await jupiterService.getQuote(outputMint, inputMint, quoteBuy.outAmount);
         console.log(`Sell quote for wallet ${wallet.publicKey}:`, quoteSell);
@@ -44,7 +44,7 @@ const strategies = {
     // Sell phase
     for (const wallet of wallets) {
       try {
-        const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint);
+        const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint, wallet.secretKey);
         console.log(`Token account for wallet ${wallet.publicKey}:`, tokenAccount.toString());
         const quoteSell = await jupiterService.getQuote(outputMint, inputMint, amount * 10 ** 9); // Using original amount for sell
         console.log(`Sell quote for wallet ${wallet.publicKey}:`, quoteSell);
@@ -69,7 +69,7 @@ const strategies = {
           console.log(`Buy quote for wallet ${wallet.publicKey}:`, quoteBuy);
           await jupiterService.swap(quoteBuy, wallet.secretKey);
           await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000)); // Random delay up to 2s
-          const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint);
+          const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint, wallet.secretKey);
           console.log(`Token account for wallet ${wallet.publicKey}:`, tokenAccount.toString());
           const quoteSell = await jupiterService.getQuote(outputMint, inputMint, quoteBuy.outAmount);
           console.log(`Sell quote for wallet ${wallet.publicKey}:`, quoteSell);
@@ -89,6 +89,9 @@ router.post('/start-bot', async (req, res) => {
   const { strategy, wallets, inputMint, outputMint, amount } = req.body;
   if (!strategy || !wallets || !inputMint || !outputMint || !amount) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+  if (!strategies[strategy]) {
+    return res.status(400).json({ success: false, error: `Invalid strategy: ${strategy}` });
   }
   try {
     await strategies[strategy](wallets, inputMint, outputMint, amount);

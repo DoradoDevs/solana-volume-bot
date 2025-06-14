@@ -1,13 +1,14 @@
 const fetch = require('cross-fetch');
 const { Connection, Keypair, VersionedTransaction } = require('@solana/web3.js');
-const env = require('../config/env');
+const { env } = require('../config/env');
+console.log('jupiterService.js: Imported env:', env);
 
 const getQuote = async (inputMint, outputMint, amount) => {
   const response = await fetch(`${env.JUPITER_API}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50`);
   return response.json();
 };
 
-const executeSwap = async (walletSecret, quoteResponse) => {
+const swap = async (quoteResponse, walletSecret) => {
   const keypair = Keypair.fromSecretKey(new Uint8Array(walletSecret));
   const response = await fetch(`${env.JUPITER_API}/swap`, {
     method: 'POST',
@@ -36,4 +37,4 @@ const executeSwap = async (walletSecret, quoteResponse) => {
   return signature;
 };
 
-module.exports = { getQuote, executeSwap };
+module.exports = { getQuote, swap };

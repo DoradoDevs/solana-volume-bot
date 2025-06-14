@@ -1,6 +1,7 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
-const env = require('../config/env');
+const { env } = require('../config/env');
+console.log('solanaService.js: Imported env:', env);
 
 const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
 
@@ -40,7 +41,7 @@ const depositSol = async (fromWalletSecret, toWalletPublicKey, amount) => {
   return signature;
 };
 
-const getTokenAccount = async (walletPublicKey, mint) => {
+const getTokenAccount = async (walletPublicKey, mint, walletSecret) => {
   const tokenAccount = getAssociatedTokenAddressSync(new PublicKey(mint), new PublicKey(walletPublicKey));
   try {
     await connection.getTokenAccountBalance(tokenAccount);
@@ -54,7 +55,8 @@ const getTokenAccount = async (walletPublicKey, mint) => {
         new PublicKey(mint)
       )
     );
-    const signature = await connection.sendTransaction(transaction, [Keypair.fromSecretKey(new Uint8Array(walletSecret))]);
+    const keypair = Keypair.fromSecretKey(new Uint8Array(walletSecret));
+    const signature = await connection.sendTransaction(transaction, [keypair]);
     await connection.confirmTransaction(signature);
     return tokenAccount;
   }

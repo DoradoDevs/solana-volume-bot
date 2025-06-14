@@ -1,5 +1,6 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
-const env = require('../config/env');
+const { env } = require('../config/env');
+console.log('taxService.js: Imported env:', env);
 
 const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
 
