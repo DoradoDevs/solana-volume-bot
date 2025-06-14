@@ -45,7 +45,7 @@ const getTokenAccount = async (walletPublicKey, mint) => {
     await connection.getTokenAccountBalance(tokenAccount);
     return tokenAccount.toString(); // Return the address if it exists
   } catch (error) {
-    return null; // Return null if the account doesn't exist, avoiding transaction
+    return null; // Return null if the account doesn't exist
   }
 };
 
