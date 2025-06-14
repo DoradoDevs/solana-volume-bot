@@ -10,10 +10,10 @@ const strategies = {
     console.log(`Starting sequentialBuySell with ${wallets.length} wallets, inputMint: ${inputMint}, outputMint: ${outputMint}, amount: ${amount}`);
     for (const wallet of wallets) {
       try {
-        const quoteBuy = await jupiterService.getQuote(inputMint, outputMint, amount * 10 ** 9); // Convert to lamports
+        const quoteBuy = await jupiterService.getQuote(inputMint, outputMint, amount * 10 ** 9);
         console.log(`Buy quote for wallet ${wallet.publicKey}:`, quoteBuy);
         await jupiterService.swap(quoteBuy, wallet.secretKey);
-        await new Promise((resolve) => setTimeout(resolve, 5000)); // 5-second delay
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint, wallet.secretKey);
         console.log(`Token account for wallet ${wallet.publicKey}:`, tokenAccount.toString());
         const quoteSell = await jupiterService.getQuote(outputMint, inputMint, quoteBuy.outAmount);
@@ -29,7 +29,6 @@ const strategies = {
 
   async buyAllThenSell(wallets, inputMint, outputMint, amount) {
     console.log(`Starting buyAllThenSell with ${wallets.length} wallets, inputMint: ${inputMint}, outputMint: ${outputMint}, amount: ${amount}`);
-    // Buy phase
     for (const wallet of wallets) {
       try {
         const quoteBuy = await jupiterService.getQuote(inputMint, outputMint, amount * 10 ** 9);
@@ -41,12 +40,11 @@ const strategies = {
         throw error;
       }
     }
-    // Sell phase
     for (const wallet of wallets) {
       try {
         const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint, wallet.secretKey);
         console.log(`Token account for wallet ${wallet.publicKey}:`, tokenAccount.toString());
-        const quoteSell = await jupiterService.getQuote(outputMint, inputMint, amount * 10 ** 9); // Using original amount for sell
+        const quoteSell = await jupiterService.getQuote(outputMint, inputMint, amount * 10 ** 9);
         console.log(`Sell quote for wallet ${wallet.publicKey}:`, quoteSell);
         await jupiterService.swap(quoteSell, wallet.secretKey);
         await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -60,7 +58,7 @@ const strategies = {
 
   async concurrentBuySell(wallets, inputMint, outputMint, amount) {
     console.log(`Starting concurrentBuySell with ${wallets.length} wallets, inputMint: ${inputMint}, outputMint: ${outputMint}, amount: ${amount}`);
-    const batchSize = Math.floor(Math.random() * 3) + 2; // 2-4 wallets per batch
+    const batchSize = Math.floor(Math.random() * 3) + 2;
     for (let i = 0; i < wallets.length; i += batchSize) {
       const batch = wallets.slice(i, i + batchSize);
       const promises = batch.map(async (wallet) => {
@@ -68,7 +66,7 @@ const strategies = {
           const quoteBuy = await jupiterService.getQuote(inputMint, outputMint, amount * 10 ** 9);
           console.log(`Buy quote for wallet ${wallet.publicKey}:`, quoteBuy);
           await jupiterService.swap(quoteBuy, wallet.secretKey);
-          await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000)); // Random delay up to 2s
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000));
           const tokenAccount = await solanaService.getTokenAccount(wallet.publicKey, outputMint, wallet.secretKey);
           console.log(`Token account for wallet ${wallet.publicKey}:`, tokenAccount.toString());
           const quoteSell = await jupiterService.getQuote(outputMint, inputMint, quoteBuy.outAmount);
@@ -87,16 +85,26 @@ const strategies = {
 
 router.post('/start-bot', async (req, res) => {
   const { strategy, wallets, inputMint, outputMint, amount } = req.body;
+  console.log('Received /start-bot request:', req.body);
   if (!strategy || !wallets || !inputMint || !outputMint || !amount) {
-    return res.status(400).json({ success: false, error: 'Missing required fields' });
+    return res.status(400).json({ success: false, error: 'Missing required fields', body: req.body });
   }
   if (!strategies[strategy]) {
-    return res.status(400).json({ success: false, error: `Invalid strategy: ${strategy}` });
+    return res.status(400).json({ success: false, error: `Invalid strategy: ${strategy}`, body: req.body });
+  }
+  if (!Array.isArray(wallets) || wallets.length === 0) {
+    return res.status(400).json({ success: false, error: 'Wallets must be a non-empty array', body: req.body });
+  }
+  for (const wallet of wallets) {
+    if (!wallet.publicKey || !wallet.secretKey) {
+      return res.status(400).json({ success: false, error: 'Each wallet must have publicKey and secretKey', body: req.body });
+    }
   }
   try {
     await strategies[strategy](wallets, inputMint, outputMint, amount);
     res.json({ success: true, message: `Bot executed ${strategy} strategy` });
   } catch (error) {
+    console.error('Error executing bot strategy:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
