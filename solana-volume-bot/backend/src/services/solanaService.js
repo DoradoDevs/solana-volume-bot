@@ -1,5 +1,6 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
+delete require.cache[require.resolve('../config/env')];
 const { env } = require('../config/env');
 console.log('Imported env in solanaService:', env);
 const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
