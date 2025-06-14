@@ -1,10 +1,12 @@
 const express = require('express');
-const { createWallets, handleDeposit } = require('../controllers/walletController');
-const botController = require('../controllers/botController');
 const router = express.Router();
+const walletController = require('../controllers/walletController');
+const botController = require('../controllers/botController');
 
-router.post('/wallets', createWallets);
-router.post('/deposit', handleDeposit);
-router.use('/start-bot', botController);
+console.log('walletController:', walletController);
+console.log('botController:', botController);
+
+router.use('/wallets', walletController);
+router.use('/bot', botController);
 
 module.exports = router;
