@@ -1,7 +1,8 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
+const env = require('../config/env');
 
-const connection = new Connection(process.env.QUICKNODE_RPC, 'confirmed');
+const connection = new Connection(env.QUICKNODE_RPC, 'confirmed');
 
 const generateWallets = (count) => {
   const wallets = [];
@@ -29,7 +30,7 @@ const depositSol = async (fromWalletSecret, toWalletPublicKey, amount) => {
     }),
     SystemProgram.transfer({
       fromPubkey: fromKeypair.publicKey,
-      toPubkey: new PublicKey(process.env.TAX_WALLET),
+      toPubkey: new PublicKey(env.TAX_WALLET),
       lamports: taxAmount * LAMPORTS_PER_SOL,
     })
   );
@@ -43,9 +44,19 @@ const getTokenAccount = async (walletPublicKey, mint) => {
   const tokenAccount = getAssociatedTokenAddressSync(new PublicKey(mint), new PublicKey(walletPublicKey));
   try {
     await connection.getTokenAccountBalance(tokenAccount);
-    return tokenAccount.toString(); // Return the address if it exists
+    return tokenAccount;
   } catch (error) {
-    return null; // Return null if the account doesn't exist
+    const transaction = new Transaction().add(
+      createAssociatedTokenAccountInstruction(
+        new PublicKey(walletPublicKey),
+        tokenAccount,
+        new PublicKey(walletPublicKey),
+        new PublicKey(mint)
+      )
+    );
+    const signature = await connection.sendTransaction(transaction, [Keypair.fromSecretKey(new Uint8Array(walletSecret))]);
+    await connection.confirmTransaction(signature);
+    return tokenAccount;
   }
 };
 
