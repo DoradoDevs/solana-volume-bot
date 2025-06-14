@@ -1,39 +1,38 @@
-const fetch = require('cross-fetch');
-const { Connection, Keypair, VersionedTransaction } = require('@solana/web3.js');
-const { env } = require('../config/env');
+const axios = require('axios');
+console.log('Using QUICKNODE_RPC from process.env in jupiterService:', process.env.QUICKNODE_RPC);
+console.log('Using JUPITER_API from process.env in jupiterService:', process.env.JUPITER_API);
 
 const getQuote = async (inputMint, outputMint, amount) => {
-  const response = await fetch(`${env.JUPITER_API}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50`);
-  return response.json();
+  try {
+    const response = await axios.get(`${process.env.JUPITER_API}/v6/quote`, {
+      params: {
+        inputMint: inputMint,
+        outputMint: outputMint,
+        amount: amount,
+        slippage: 0.5,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching quote from Jupiter API:', error.message);
+    throw error;
+  }
 };
 
-const executeSwap = async (walletSecret, quoteResponse) => {
-  const keypair = Keypair.fromSecretKey(new Uint8Array(walletSecret));
-  const response = await fetch(`${env.JUPITER_API}/swap`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      userPublicKey: keypair.publicKey.toString(),
-      quoteResponse,
-      prioritizationFeeLamports: { jitoTipLamports: 1000000 },
-    }),
-  });
-  const { swapTransaction } = await response.json();
-  const transaction = VersionedTransaction.deserialize(Buffer.from(swapTransaction, 'base64'));
-  
-  // Calculate 0.01% tax on input amount
-  const inputAmount = quoteResponse.inAmount / 10**9;
-  const taxAmount = inputAmount * 0.0001 * 10**9;
-  const taxInstruction = SystemProgram.transfer({
-    fromPubkey: keypair.publicKey,
-    toPubkey: new PublicKey(env.TAX_WALLET),
-    lamports: taxAmount,
-  });
-  transaction.message.instructions.push(taxInstruction);
-  
-  transaction.sign([keypair]);
-  const signature = await new Connection(env.QUICKNODE_RPC).sendTransaction(transaction);
-  return signature;
+const swap = async (quoteResponse, userWalletSecret) => {
+  try {
+    const { swapTransaction } = quoteResponse;
+    const userKeypair = Keypair.fromSecretKey(new Uint8Array(userWalletSecret));
+    const connection = new Connection(process.env.QUICKNODE_RPC, 'confirmed');
+    const transaction = Transaction.from(Buffer.from(swapTransaction, 'base64'));
+    transaction.sign(userKeypair);
+    const signature = await connection.sendRawTransaction(transaction.serialize());
+    await connection.confirmTransaction(signature);
+    return signature;
+  } catch (error) {
+    console.error('Error executing swap:', error.message);
+    throw error;
+  }
 };
 
-module.exports = { getQuote, executeSwap };
+module.exports = { getQuote, swap };
