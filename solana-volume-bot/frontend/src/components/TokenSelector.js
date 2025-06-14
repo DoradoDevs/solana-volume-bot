@@ -1,28 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-function TokenSelector() {
-  const [inputMint, setInputMint] = useState('So11111111111111111111111111111111111111112'); // SOL
-  const [outputMint, setOutputMint] = useState('');
+function TokenSelector({ onSelect }) {
+  const tokens = [
+    { name: 'SOL', address: 'So11111111111111111111111111111111111111112' },
+    { name: 'USDC', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+  ];
 
   return (
-    <div className="mb-4">
-      <h2 className="text-xl font-semibold">Select Token</h2>
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Input Mint (SOL)"
-          value={inputMint}
-          readOnly
-          className="w-full p-2 border rounded bg-gray-100"
-        />
-        <input
-          type="text"
-          placeholder="Output Mint (Token)"
-          value={outputMint}
-          onChange={(e) => setOutputMint(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-      </div>
+    <div>
+      <h3>Select Token</h3>
+      <select onChange={(e) => onSelect(tokens.find(t => t.address === e.target.value))}>
+        <option value="">Select a token</option>
+        {tokens.map(token => (
+          <option key={token.address} value={token.address}>
+            {token.name}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

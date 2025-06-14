@@ -1,80 +1,38 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function DepositForm({ wallets, setMessage }) {
-  const [depositData, setDepositData] = useState({ fromWalletSecret: '', toWalletPublicKey: '', amount: 0 });
-  const [tokenAccountData, setTokenAccountData] = useState({ walletPublicKey: '', mint: '' });
+function DepositForm({ userPublicKey, setMessage }) {
+  const [amount, setAmount] = useState(0.01);
+  const distributionWallet = 'DISTRIBUTION_WALLET_PUBLIC_KEY_HERE'; // Replace with backend-controlled address
 
   const handleDeposit = (e) => {
     e.preventDefault();
-    axios.post(`${process.env.REACT_APP_API_URL}/wallets/deposit`, depositData)
-      .then(response => {
-        setMessage(`Deposit successful, signature: ${response.data.signature}`);
-      })
-      .catch(error => {
-        console.error('Error depositing:', error);
-        setMessage('Error depositing');
-      });
-  };
+    if (!userPublicKey) {
+      setMessage('Please connect your wallet first');
+      return;
+    }
 
-  const handleGetTokenAccount = (e) => {
-    e.preventDefault();
-    axios.post(`${process.env.REACT_APP_API_URL}/wallets/get-token-account`, tokenAccountData)
-      .then(response => {
-        setMessage(`Token account: ${response.data.tokenAccount}`);
-      })
-      .catch(error => {
-        console.error('Error getting token account:', error);
-        setMessage('Error getting token account');
-      });
+    // This is a manual deposit instruction; backend will handle distribution
+    setMessage(`Please send ${amount} SOL to ${distributionWallet} from your connected wallet`);
+    // Note: Actual transaction would require wallet adapter to sign and send
   };
 
   return (
     <div>
-      <h2>Deposit & Token Account</h2>
+      <h2>Deposit SOL</h2>
       <form onSubmit={handleDeposit}>
         <input
-          type="text"
-          value={depositData.fromWalletSecret}
-          onChange={(e) => setDepositData({ ...depositData, fromWalletSecret: e.target.value })}
-          placeholder="From Wallet Secret Key"
-          required
-        />
-        <input
-          type="text"
-          value={depositData.toWalletPublicKey}
-          onChange={(e) => setDepositData({ ...depositData, toWalletPublicKey: e.target.value })}
-          placeholder="To Wallet Public Key"
-          required
-        />
-        <input
           type="number"
-          value={depositData.amount}
-          onChange={(e) => setDepositData({ ...depositData, amount: e.target.value })}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
           placeholder="Amount (SOL)"
           step="0.01"
           min="0.01"
           required
         />
-        <button type="submit">Deposit</button>
+        <button type="submit">Deposit to Distribution Wallet</button>
       </form>
-      <form onSubmit={handleGetTokenAccount}>
-        <input
-          type="text"
-          value={tokenAccountData.walletPublicKey}
-          onChange={(e) => setTokenAccountData({ ...tokenAccountData, walletPublicKey: e.target.value })}
-          placeholder="Wallet Public Key"
-          required
-        />
-        <input
-          type="text"
-          value={tokenAccountData.mint}
-          onChange={(e) => setTokenAccountData({ ...tokenAccountData, mint: e.target.value })}
-          placeholder="Mint Address"
-          required
-        />
-        <button type="submit">Get Token Account</button>
-      </form>
+      <p>Distribution Wallet: {distributionWallet}</p>
       {message && <p>{message}</p>}
     </div>
   );

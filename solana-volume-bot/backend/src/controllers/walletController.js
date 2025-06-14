@@ -33,4 +33,20 @@ router.post('/get-token-account', async (req, res) => {
   }
 });
 
+router.post('/distribute', async (req, res) => {
+  const { amounts } = req.body;
+  if (!amounts || Object.keys(amounts).length === 0) return res.status(400).json({ error: 'Amounts object is required' });
+
+  // Generate or retrieve unique distribution wallet for the user (simplified)
+  const distributionWallet = Keypair.generate();
+  console.log('Generated distribution wallet:', distributionWallet.publicKey.toString());
+
+  try {
+    const signature = await solanaService.distributeSol(distributionWallet.secretKey, amounts);
+    res.json({ signature, distributionWallet: distributionWallet.publicKey.toString() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

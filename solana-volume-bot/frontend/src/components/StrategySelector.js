@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function StrategySelector({ wallets, setMessage }) {
-  const [selectedWallet, setSelectedWallet] = useState(null);
-  const [inputMint, setInputMint] = useState('');
-  const [outputMint, setOutputMint] = useState('So11111111111111111111111111111111111111112'); // Default to SOL
+function StrategySelector({ wallets, setMessage, inputMint, outputMint }) {
   const [amount, setAmount] = useState(0.01);
   const [strategy, setStrategy] = useState('sequentialBuySell');
 
   const handleStartBot = (e) => {
     e.preventDefault();
-    if (!selectedWallet || !inputMint || !outputMint || !amount) {
-      setMessage('Please fill all fields');
+    if (!wallets.length || !inputMint || !outputMint || !amount) {
+      setMessage('Please fill all fields and generate wallets');
       return;
     }
 
     const botData = {
       strategy,
-      wallets: [{ publicKey: selectedWallet.publicKey, secretKey: selectedWallet.secretKey }],
+      wallets,
       inputMint,
       outputMint,
       amount,
@@ -37,33 +34,11 @@ function StrategySelector({ wallets, setMessage }) {
     <div>
       <h2>Bot Strategy</h2>
       <form onSubmit={handleStartBot}>
-        <select onChange={(e) => setSelectedWallet(JSON.parse(e.target.value))} value={selectedWallet ? JSON.stringify(selectedWallet) : ''}>
-          <option value="" disabled>Select a wallet</option>
-          {wallets.map((wallet, index) => (
-            <option key={index} value={JSON.stringify(wallet)}>
-              {wallet.publicKey}
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          value={inputMint}
-          onChange={(e) => setInputMint(e.target.value)}
-          placeholder="Input Mint Address"
-          required
-        />
-        <input
-          type="text"
-          value={outputMint}
-          onChange={(e) => setOutputMint(e.target.value)}
-          placeholder="Output Mint Address (e.g., SOL)"
-          required
-        />
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder="Amount (SOL)"
+          placeholder="Amount per Swap (SOL)"
           step="0.01"
           min="0.01"
           required
