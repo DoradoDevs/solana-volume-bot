@@ -43,19 +43,9 @@ const getTokenAccount = async (walletPublicKey, mint) => {
   const tokenAccount = getAssociatedTokenAddressSync(new PublicKey(mint), new PublicKey(walletPublicKey));
   try {
     await connection.getTokenAccountBalance(tokenAccount);
-    return tokenAccount;
+    return tokenAccount.toString(); // Return the address if it exists
   } catch (error) {
-    const transaction = new Transaction().add(
-      createAssociatedTokenAccountInstruction(
-        new PublicKey(walletPublicKey),
-        tokenAccount,
-        new PublicKey(walletPublicKey),
-        new PublicKey(mint)
-      )
-    );
-    const signature = await connection.sendTransaction(transaction, [Keypair.fromSecretKey(new Uint8Array(walletSecret))]);
-    await connection.confirmTransaction(signature);
-    return tokenAccount;
+    return null; // Return null if the account doesn't exist, avoiding transaction
   }
 };
 
