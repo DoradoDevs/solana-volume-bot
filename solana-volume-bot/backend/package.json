@@ -2,8 +2,8 @@
   "name": "solana-volume-bot-backend",
   "version": "1.0.0",
   "scripts": {
-    "start": "node src/index.js"
-  },
+  "start": "node -r dotenv/config src/index.js"
+},
   "dependencies": {
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.78.0",
