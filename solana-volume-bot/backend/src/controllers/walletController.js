@@ -8,7 +8,7 @@ const crypto = require('crypto');
 console.log('Loaded solanaService and taxService in walletController');
 
 // MongoDB Configuration
-const uri = 'mongodb://localhost:27017'; // Update with your MongoDB URI (e.g., MongoDB Atlas connection string)
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017'; // Fallback for local testing
 const dbName = 'solana_volume_bot';
 const client = new MongoClient(uri);
 let db;
@@ -24,7 +24,7 @@ async function connectDB() {
 }
 connectDB();
 
-const encryptKey = crypto.randomBytes(32); // Use a secure key in production (e.g., from environment variables)
+const encryptKey = crypto.randomBytes(32); // Use secure key from env in production
 const iv = crypto.randomBytes(16);
 
 function encrypt(text) {
@@ -102,6 +102,27 @@ router.post('/distribute', async (req, res) => {
     res.json({ signature, distributionWallet: distributionWallet.publicKey.toString() });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/get-distribution-wallet', async (req, res) => {
+  const { userPublicKey } = req.query;
+  if (!userPublicKey) return res.status(400).json({ error: 'userPublicKey is required' });
+
+  if (!db) return res.status(500).json({ error: 'Database not connected' });
+
+  const walletsCollection = db.collection('distributionWallets');
+  let distributionWalletData = await walletsCollection.findOne({ userPublicKey: userPublicKey.toString() });
+
+  if (!distributionWalletData) {
+    const distributionWallet = Keypair.generate();
+    const encryptedSecretKey = encrypt(JSON.stringify(Array.from(distributionWallet.secretKey)));
+    await walletsCollection.insertOne({ userPublicKey: userPublicKey.toString(), secretKey: encryptedSecretKey });
+    res.json({ distributionWallet: distributionWallet.publicKey.toString() });
+  } else {
+    const decryptedSecretKey = JSON.parse(decrypt(distributionWalletData.secretKey));
+    const distributionWallet = Keypair.fromSecretKey(new Uint8Array(decryptedSecretKey));
+    res.json({ distributionWallet: distributionWallet.publicKey.toString() });
   }
 });
 
