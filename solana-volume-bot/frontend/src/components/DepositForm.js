@@ -1,48 +1,81 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
-function DepositForm() {
-  const [walletSecret, setWalletSecret] = useState('');
-  const [toWallet, setToWallet] = useState('');
-  const [amount, setAmount] = useState('');
+function DepositForm({ wallets, setMessage }) {
+  const [depositData, setDepositData] = useState({ fromWalletSecret: '', toWalletPublicKey: '', amount: 0 });
+  const [tokenAccountData, setTokenAccountData] = useState({ walletPublicKey: '', mint: '' });
 
-  const handleDeposit = async (e) => {
+  const handleDeposit = (e) => {
     e.preventDefault();
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/deposit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fromWalletSecret: JSON.parse(walletSecret), toWalletPublicKey: toWallet, amount: parseFloat(amount) }),
-    });
-    const result = await response.json();
-    alert(result.success ? `Deposit successful: ${result.signature}` : `Error: ${result.error}`);
+    axios.post(`${process.env.REACT_APP_API_URL}/wallets/deposit`, depositData)
+      .then(response => {
+        setMessage(`Deposit successful, signature: ${response.data.signature}`);
+      })
+      .catch(error => {
+        console.error('Error depositing:', error);
+        setMessage('Error depositing');
+      });
+  };
+
+  const handleGetTokenAccount = (e) => {
+    e.preventDefault();
+    axios.post(`${process.env.REACT_APP_API_URL}/wallets/get-token-account`, tokenAccountData)
+      .then(response => {
+        setMessage(`Token account: ${response.data.tokenAccount}`);
+      })
+      .catch(error => {
+        console.error('Error getting token account:', error);
+        setMessage('Error getting token account');
+      });
   };
 
   return (
-    <div className="mb-4">
-      <h2 className="text-xl font-semibold">Deposit SOL</h2>
-      <form onSubmit={handleDeposit} className="space-y-4">
+    <div>
+      <h2>Deposit & Token Account</h2>
+      <form onSubmit={handleDeposit}>
         <input
           type="text"
-          placeholder="From Wallet Secret Key (JSON array)"
-          value={walletSecret}
-          onChange={(e) => setWalletSecret(e.target.value)}
-          className="w-full p-2 border rounded"
+          value={depositData.fromWalletSecret}
+          onChange={(e) => setDepositData({ ...depositData, fromWalletSecret: e.target.value })}
+          placeholder="From Wallet Secret Key"
+          required
         />
         <input
           type="text"
+          value={depositData.toWalletPublicKey}
+          onChange={(e) => setDepositData({ ...depositData, toWalletPublicKey: e.target.value })}
           placeholder="To Wallet Public Key"
-          value={toWallet}
-          onChange={(e) => setToWallet(e.target.value)}
-          className="w-full p-2 border rounded"
+          required
         />
         <input
           type="number"
+          value={depositData.amount}
+          onChange={(e) => setDepositData({ ...depositData, amount: e.target.value })}
           placeholder="Amount (SOL)"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full p-2 border rounded"
+          step="0.01"
+          min="0.01"
+          required
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">Deposit</button>
+        <button type="submit">Deposit</button>
       </form>
+      <form onSubmit={handleGetTokenAccount}>
+        <input
+          type="text"
+          value={tokenAccountData.walletPublicKey}
+          onChange={(e) => setTokenAccountData({ ...tokenAccountData, walletPublicKey: e.target.value })}
+          placeholder="Wallet Public Key"
+          required
+        />
+        <input
+          type="text"
+          value={tokenAccountData.mint}
+          onChange={(e) => setTokenAccountData({ ...tokenAccountData, mint: e.target.value })}
+          placeholder="Mint Address"
+          required
+        />
+        <button type="submit">Get Token Account</button>
+      </form>
+      {message && <p>{message}</p>}
     </div>
   );
 }
