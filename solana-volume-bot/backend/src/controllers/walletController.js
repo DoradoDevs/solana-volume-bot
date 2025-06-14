@@ -1,24 +1,36 @@
-const { generateWallets, depositSol } = require('../services/solanaService');
-const { applyTax } = require('../services/taxService');
+const express = require('express');
+const router = express.Router();
+const solanaService = require('../services/solanaService');
+const taxService = require('../services/taxService');
+console.log('Loaded solanaService and taxService in walletController');
 
-const createWallets = (req, res) => {
+router.post('/generate-wallets', (req, res) => {
   const { count } = req.body;
-  if (count > 30 || count < 1) {
-    return res.status(400).json({ error: 'Wallet count must be between 1 and 30' });
-  }
-  const wallets = generateWallets(count);
-  res.json({ wallets });
-};
+  if (!count || count <= 0) return res.status(400).json({ error: 'Count must be a positive number' });
+  const wallets = solanaService.generateWallets(count);
+  res.json(wallets);
+});
 
-const handleDeposit = async (req, res) => {
+router.post('/deposit', async (req, res) => {
   const { fromWalletSecret, toWalletPublicKey, amount } = req.body;
+  if (!fromWalletSecret || !toWalletPublicKey || !amount) return res.status(400).json({ error: 'Missing required fields' });
   try {
-    const signature = await depositSol(fromWalletSecret, toWalletPublicKey, amount);
-    await applyTax(fromWalletSecret, amount);
-    res.json({ success: true, signature });
+    const signature = await solanaService.depositSol(fromWalletSecret, toWalletPublicKey, amount);
+    res.json({ signature });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
-};
+});
 
-module.exports = { createWallets, handleDeposit };
+router.post('/get-token-account', async (req, res) => {
+  const { walletPublicKey, mint } = req.body;
+  if (!walletPublicKey || !mint) return res.status(400).json({ error: 'Missing required fields' });
+  try {
+    const tokenAccount = await solanaService.getTokenAccount(walletPublicKey, mint);
+    res.json({ tokenAccount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;

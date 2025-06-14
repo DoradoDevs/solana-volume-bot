@@ -1,8 +1,8 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
-const QUICKNODE_RPC = process.env.QUICKNODE_RPC;
-console.log('Using QUICKNODE_RPC from process.env:', QUICKNODE_RPC);
-const connection = new Connection(QUICKNODE_RPC, 'confirmed');
+console.log('Using QUICKNODE_RPC from process.env in solanaService:', process.env.QUICKNODE_RPC);
+
+const connection = new Connection(process.env.QUICKNODE_RPC, 'confirmed');
 
 const generateWallets = (count) => {
   const wallets = [];
