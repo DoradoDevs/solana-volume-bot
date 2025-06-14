@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function WalletStatus({ wallets, setWallets, setMessage }) {
+function WalletStatus({ wallets, setWallets, setMessage, userPublicKey }) {
   const [count, setCount] = useState(1);
   const [equalAmount, setEqualAmount] = useState(0.01);
   const [customAmounts, setCustomAmounts] = useState({});
@@ -27,6 +27,7 @@ function WalletStatus({ wallets, setWallets, setMessage }) {
     const amountPerWallet = equalAmount / wallets.length;
     const distributionData = {
       amounts: wallets.reduce((acc, wallet) => ({ ...acc, [wallet.publicKey]: amountPerWallet }), {}),
+      userPublicKey,
     };
     axios.post(`${process.env.REACT_APP_API_URL}/wallets/distribute`, distributionData)
       .then(response => {
@@ -44,7 +45,7 @@ function WalletStatus({ wallets, setWallets, setMessage }) {
       setMessage('Please enter valid amounts for all wallets');
       return;
     }
-    const distributionData = { amounts: customAmounts };
+    const distributionData = { amounts: customAmounts, userPublicKey };
     axios.post(`${process.env.REACT_APP_API_URL}/wallets/distribute`, distributionData)
       .then(response => {
         setMessage('Distributed SOL with custom amounts');
@@ -109,7 +110,7 @@ function WalletStatus({ wallets, setWallets, setMessage }) {
               />
             </div>
           ))}
-          <button onSubmit={handleCustomDistribution}>Distribute</button>
+          <button onClick={handleCustomDistribution}>Distribute</button>
         </div>
       )}
       {message && <p>{message}</p>}

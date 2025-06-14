@@ -35,11 +35,19 @@ router.post('/get-token-account', async (req, res) => {
 
 router.post('/distribute', async (req, res) => {
   const { amounts } = req.body;
+  const { userPublicKey } = req.body; // Expect this from frontend wallet connection
   if (!amounts || Object.keys(amounts).length === 0) return res.status(400).json({ error: 'Amounts object is required' });
+  if (!userPublicKey) return res.status(400).json({ error: 'userPublicKey is required' });
 
-  // Generate or retrieve unique distribution wallet for the user (simplified)
-  const distributionWallet = Keypair.generate();
-  console.log('Generated distribution wallet:', distributionWallet.publicKey.toString());
+  let distributionWallets = new Map(); // Should be persistent in production (e.g., database)
+  let distributionWallet = distributionWallets.get(userPublicKey.toString());
+  if (!distributionWallet) {
+    distributionWallet = Keypair.generate();
+    distributionWallets.set(userPublicKey.toString(), distributionWallet);
+    console.log(`New distribution wallet for ${userPublicKey.toString()}:`, distributionWallet.publicKey.toString());
+  } else {
+    console.log(`Reusing distribution wallet for ${userPublicKey.toString()}:`, distributionWallet.publicKey.toString());
+  }
 
   try {
     const signature = await solanaService.distributeSol(distributionWallet.secretKey, amounts);

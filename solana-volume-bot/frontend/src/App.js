@@ -35,7 +35,7 @@ function App() {
           {userPublicKey ? (
             <>
               <p>Connected: {userPublicKey.toString()}</p>
-              <WalletStatus wallets={wallets} setWallets={setWallets} setMessage={setMessage} />
+              <WalletStatus wallets={wallets} setWallets={setWallets} setMessage={setMessage} userPublicKey={userPublicKey} />
               <TokenSelector onSelect={setSelectedToken} />
               <DepositForm userPublicKey={userPublicKey} setMessage={setMessage} />
               <StrategySelector
