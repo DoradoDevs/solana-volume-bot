@@ -1,6 +1,5 @@
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
-console.log('Using QUICKNODE_RPC from process.env in solanaService:', process.env.QUICKNODE_RPC);
 
 const connection = new Connection(process.env.QUICKNODE_RPC, 'confirmed');
 
@@ -60,25 +59,4 @@ const getTokenAccount = async (walletPublicKey, mint) => {
   }
 };
 
-const distributeSol = async (distributionWalletSecret, amounts) => {
-  const distributionKeypair = Keypair.fromSecretKey(new Uint8Array(distributionWalletSecret));
-  const transaction = new Transaction();
-
-  for (const [toPublicKey, amount] of Object.entries(amounts)) {
-    const toPubkey = new PublicKey(toPublicKey);
-    const lamports = amount * LAMPORTS_PER_SOL;
-    transaction.add(
-      SystemProgram.transfer({
-        fromPubkey: distributionKeypair.publicKey,
-        toPubkey,
-        lamports,
-      })
-    );
-  }
-
-  const signature = await connection.sendTransaction(transaction, [distributionKeypair]);
-  await connection.confirmTransaction(signature);
-  return signature;
-};
-
-module.exports = { generateWallets, depositSol, getTokenAccount, distributeSol };
+module.exports = { generateWallets, depositSol, getTokenAccount };
