@@ -4,6 +4,7 @@ const solanaService = require('../services/solanaService');
 const taxService = require('../services/taxService');
 const { MongoClient, ObjectId } = require('mongodb');
 const crypto = require('crypto');
+const { Connection, Keypair } = require('@solana/web3.js');
 
 console.log('Loaded solanaService and taxService in walletController');
 
@@ -42,6 +43,7 @@ function decrypt(encrypted) {
 }
 
 router.post('/generate-wallets', (req, res) => {
+  console.log('POST /generate-wallets called with body:', req.body);
   const { count } = req.body;
   if (!count || count <= 0) return res.status(400).json({ error: 'Count must be a positive number' });
   const wallets = solanaService.generateWallets(count);
@@ -49,6 +51,7 @@ router.post('/generate-wallets', (req, res) => {
 });
 
 router.post('/deposit', async (req, res) => {
+  console.log('POST /deposit called with body:', req.body);
   const { fromPublicKey, toPublicKey, amount, signature } = req.body;
   if (!fromPublicKey || !toPublicKey || !amount || !signature) return res.status(400).json({ error: 'Missing required fields' });
   try {
@@ -59,24 +62,27 @@ router.post('/deposit', async (req, res) => {
     console.log(`Deposit of ${amount} SOL from ${fromPublicKey} to ${toPublicKey}, signature: ${signature}`);
     res.json({ success: true, message: 'Deposit recorded', signature });
   } catch (error) {
+    console.error('Error in /deposit:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
 router.post('/get-token-account', async (req, res) => {
+  console.log('POST /get-token-account called with body:', req.body);
   const { walletPublicKey, mint } = req.body;
   if (!walletPublicKey || !mint) return res.status(400).json({ error: 'Missing required fields' });
   try {
     const tokenAccount = await solanaService.getTokenAccount(walletPublicKey, mint);
     res.json({ tokenAccount });
   } catch (error) {
+    console.error('Error in /get-token-account:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
 router.post('/distribute', async (req, res) => {
-  const { amounts } = req.body;
-  const { userPublicKey } = req.body;
+  console.log('POST /distribute called with body:', req.body);
+  const { amounts, userPublicKey } = req.body;
   if (!amounts || Object.keys(amounts).length === 0) return res.status(400).json({ error: 'Amounts object is required' });
   if (!userPublicKey) return res.status(400).json({ error: 'userPublicKey is required' });
 
@@ -101,11 +107,13 @@ router.post('/distribute', async (req, res) => {
     const signature = await solanaService.distributeSol(distributionWallet.secretKey, amounts);
     res.json({ signature, distributionWallet: distributionWallet.publicKey.toString() });
   } catch (error) {
+    console.error('Error in /distribute:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
 router.get('/get-distribution-wallet', async (req, res) => {
+  console.log('GET /get-distribution-wallet called with query:', req.query);
   const { userPublicKey } = req.query;
   if (!userPublicKey) return res.status(400).json({ error: 'userPublicKey is required' });
 
@@ -126,4 +134,5 @@ router.get('/get-distribution-wallet', async (req, res) => {
   }
 });
 
+console.log('Exporting walletController router');
 module.exports = router;
